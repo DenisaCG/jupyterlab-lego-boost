@@ -33,16 +33,74 @@ var lego_boost_color = '#550a8a';
  * Block definitions
  */
 
+// Blockly.Blocks['lego_boost_connect'] = {
+//   init: function () {
+//     this.appendValueInput('BLUETOOTH_ADDRESS')
+//       .setCheck('String')
+//       .appendField('Connect to MoveHub on address');
+//     this.setInputsInline(true);
+//     this.setPreviousStatement(true, null);
+//     this.setNextStatement(true, null);
+//     this.setColour(lego_boost_color);
+//     this.setTooltip('Connect to Lego Boost given its Bluetooth address.');
+//     this.setHelpUrl('');
+//   }
+// };
+
 Blockly.Blocks['lego_boost_connect'] = {
   init: function () {
     this.appendValueInput('BLUETOOTH_ADDRESS')
       .setCheck('String')
       .appendField('Connect to MoveHub on address');
+    this.appendStatementInput('DO');
+    this.setInputsInline(true);
+    this.setPreviousStatement(false, null);
+    this.setNextStatement(true, null);
+    this.setColour(lego_boost_color);
+    this.setTooltip('Connect to Lego Boost given its Bluetooth address.');
+    this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['async_main'] = {
+  init: function () {
+    this.appendDummyInput()
+      .appendField('Main function');
+    this.appendStatementInput('DO');
+    this.setInputsInline(false);
+    this.setPreviousStatement(false, null);
+    this.setNextStatement(true, null);
+    this.setColour(lego_boost_color);
+    this.setTooltip('');
+    this.setHelpUrl('');
+  }
+};
+
+
+Blockly.Blocks['async_test_1'] = {
+  init: function () {
+    this.appendValueInput('TIME')
+      .setCheck('Number')
+      .appendField('Print all numbers until');
     this.setInputsInline(true);
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setColour(lego_boost_color);
-    this.setTooltip('Connect to Lego Boost given its Bluetooth address.');
+    this.setTooltip();
+    this.setHelpUrl('');
+  }
+};
+
+Blockly.Blocks['async_test_2'] = {
+  init: function () {
+    this.appendValueInput('TIME')
+      .setCheck('Number')
+      .appendField('Print in reverse numbers from');
+    this.setInputsInline(true);
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(lego_boost_color);
+    this.setTooltip();
     this.setHelpUrl('');
   }
 };
@@ -599,19 +657,61 @@ BlocklyPy['lego_boost_connect'] = function (block) {
     BlocklyPy.ORDER_ATOMIC
   );
 
+  let branch = BlocklyPy.statementToCode(block, 'DO');
+
   var code =
     'conn = get_connection_bleak(hub_mac=' +
     value_bluetooth_address +
-    ', hub_name=MoveHub.DEFAULT_NAME)\nhub = MoveHub(conn)\n';
+    ', hub_name=MoveHub.DEFAULT_NAME)\nhub = MoveHub(conn)\n\n' +
+    'async def boost():\n' + branch + 
+    '\nawait boost()\n';
   return code;
 };
 
-Blockly.Blocks['lego_boost_connect'].toplevel_init = `
-from pylgbst.hub import MoveHub
+Blockly.Blocks['lego_boost_connect'].toplevel_init = `from pylgbst.hub import MoveHub
 from pylgbst import get_connection_bleak
 import time 
+import asyncio
 
 `;
+
+BlocklyPy['async_main'] = function (block) {
+  var value_bluetooth_address = BlocklyPy.valueToCode(
+    block,
+    'BLUETOOTH_ADDRESS',
+    BlocklyPy.ORDER_ATOMIC
+  );
+
+  let branch = BlocklyPy.statementToCode(block, 'DO');
+
+  var code =
+    'async def main():\n' + branch + 
+    '\nawait main()\n';
+  return code;
+};
+
+Blockly.Blocks['async_main'].toplevel_init = `import asyncio
+
+`;
+
+BlocklyPy['async_test_1'] = function (block) {
+  var value_time = BlocklyPy.valueToCode(block, 'TIME', BlocklyPy.ORDER_ATOMIC);
+
+  var code = 'for i in range(' + value_time + '):\n' 
+  + '   print(i)\n'
+  + '   await asyncio.sleep(1)\n';
+  return code;
+};
+
+BlocklyPy['async_test_2'] = function (block) {
+  var value_time = BlocklyPy.valueToCode(block, 'TIME', BlocklyPy.ORDER_ATOMIC);
+
+  var code = 'for i in range(' + value_time + ', 0, -1):\n' 
+  + '   print(i)\n'
+  + '   await asyncio.sleep(1)\n';
+  return code;
+};
+
 
 BlocklyPy['lego_boost_movement_forward'] = function (block) {
   var value_time = BlocklyPy.valueToCode(block, 'TIME', BlocklyPy.ORDER_ATOMIC);
@@ -623,7 +723,7 @@ BlocklyPy['lego_boost_movement_forward'] = function (block) {
   );
 
   var code =
-    'hub.motor_AB.timed(' +
+    '    await hub.motor_AB.timed(' +
     value_time +
     ', ' +
     value_speed +
@@ -643,7 +743,7 @@ BlocklyPy['lego_boost_movement_backwards'] = function (block) {
   );
 
   var code =
-    'hub.motor_AB.timed( ' +
+    '    await hub.motor_AB.timed( ' +
     value_time +
     ', -' +
     value_speed +
@@ -1400,6 +1500,18 @@ const TOOLBOX = {
         {
           kind: 'BLOCK',
           type: 'lego_boost_connect'
+        },
+        {
+          kind: 'BLOCK',
+          type: 'async_main'
+        },
+        {
+          kind: 'BLOCK',
+          type: 'async_test_1'
+        },
+        {
+          kind: 'BLOCK',
+          type: 'async_test_2'
         },
         {
           kind: 'BLOCK',
